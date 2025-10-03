@@ -28,11 +28,20 @@
         const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
         const data = await resp.json();
 
-        // Show visitor's city + country on screen
-        document.getElementById("location").innerHTML =
-          `<p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>`;
+        // Handle possible ipdata.io errors
+        if (data.message) {
+          document.getElementById("location").textContent = `Error from ipdata.io: ${data.message}`;
+          console.warn("ipdata.io error:", data.message);
+          return;
+        }
 
-        // Send details to Google Sheet (via Apps Script Web App)
+        // Show visitor info on the page
+        document.getElementById("location").innerHTML = `
+          <p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>
+          <p>Latitude: ${data.latitude || 'N/A'}, Longitude: ${data.longitude || 'N/A'}</p>
+        `;
+
+        // Send details to Google Sheet
         const params = new URLSearchParams({
           ip: data.ip || '',
           city: data.city || '',
@@ -43,11 +52,11 @@
           raw: JSON.stringify(data)
         });
 
-        // Fire the request (no-cors so it works silently)
-        fetch(`${SHEET_WEBAPP_URL}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+        // Send silently (no need to await)
+        fetch(`${SHEET_WEBAPP_URL}?${params.toString()}`, { method: 'GET' });
 
       } catch (err) {
-        console.error("Error:", err);
+        console.error("Fetch error:", err);
         document.getElementById("location").textContent = "Could not fetch location.";
       }
     }
