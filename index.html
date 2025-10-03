@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Visitor Logger with ipdata + Geolocation</title>
+  <title>Visitor Logger with ipdata.io</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,23 +17,22 @@
 <body>
   <h1>Hello 👋</h1>
   <div id="location">Checking your location...</div>
-  <div id="coords"></div>
 
   <script>
-    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee7fa9544853ee96576dc8a38ba406d1";
+    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1"; 
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7HB928piVdSZL4ovPU4jj4JvOfHCY8kgPPUOXJ9-kRTX3ZL5CMXY0fNiv0MMAJZoGyA/exec";
 
     async function reportVisitor() {
       try {
-        // 1️⃣ Get visitor info from ipdata.io
+        // Get visitor info from ipdata.io
         const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
         const data = await resp.json();
 
-        // Show city/country on the page
+        // Show visitor's city + country on screen
         document.getElementById("location").innerHTML =
           `<p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>`;
 
-        // 2️⃣ Send data to Google Sheet
+        // Send details to Google Sheet (via Apps Script Web App)
         const params = new URLSearchParams({
           ip: data.ip || '',
           city: data.city || '',
@@ -44,42 +43,11 @@
           raw: JSON.stringify(data)
         });
 
+        // Fire the request (no-cors so it works silently)
         fetch(`${SHEET_WEBAPP_URL}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
 
-        // 3️⃣ Browser geolocation for exact coordinates
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            position => {
-              const lat = position.coords.latitude;
-              const lon = position.coords.longitude;
-              console.log("Exact coords:", lat, lon);
-
-              // Show on page
-              document.getElementById("coords").innerHTML =
-                `<p>Your exact coordinates are: ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>`;
-
-              // Optional: send exact coords to sheet as another row
-              const geoParams = new URLSearchParams({
-                ip: data.ip || '',
-                city: data.city || '',
-                region: data.region || '',
-                country: data.country_name || '',
-                latitude: lat,
-                longitude: lon,
-                raw: JSON.stringify(data)
-              });
-              fetch(`${SHEET_WEBAPP_URL}?${geoParams.toString()}`, { method: 'GET', mode: 'no-cors' });
-            },
-            error => {
-              console.warn("Geolocation permission denied or unavailable:", error.message);
-            }
-          );
-        } else {
-          console.warn("Geolocation not supported by this browser");
-        }
-
       } catch (err) {
-        console.error("Error fetching IP data:", err);
+        console.error("Error:", err);
         document.getElementById("location").textContent = "Could not fetch location.";
       }
     }
