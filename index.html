@@ -1,114 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Pop-up Images with Visitor Logging</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000; /* black background */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-    #image-container img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 12px;
-      opacity: 0;
-      animation: fadeIn 1s forwards;
-      position: absolute;
-    }
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Pop-up Images</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    height: 100vh;
+  }
+
+  #image-container img {
+    position: absolute;
+    border-radius: 8px;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+</style>
 </head>
 <body>
-  <div id="image-container"></div>
+<div id="image-container"></div>
 
-  <script>
-    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38b";
-    const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7HB928piVdSZL4ovPU4jj4JvOfHCY8kgPPUOXJ9-kRTX3ZL5CMXY0fNiv0MMAJZoGyA/exec";
+<script>
+/************** IMAGES SETUP **************/
+const images = [
+  "https://image.cdn2.seaart.me/2025-10-02/d3f627le878c738v1j1g/5fe35387e61d2c74b2d327f8d0bd4061_high.webp",
+  "https://image.cdn2.seaart.me/2025-10-02/d3ffcqle878c738q77ag/29bf11442e9e970bb8c5ee4aef465a9a_high.webp",
+  "https://image.cdn2.seaart.me/2025-10-02/d3etkgte878c73e1atng/84a08183cb1a6abfc5013aae1319cee5_high.webp",
+  "https://image.cdn2.seaart.me/2025-10-02/d3ethvle878c738le7i0/ae7d0aaaf894e2d3ec52ce6fab2f2b36_high.webp",
+  "https://image.cdn2.seaart.me/2025-10-02/d3etan5e878c73dtp9kg/6b7882548f4f0d43b2d261cd184b7dd5fe6390bd_high.webp",
+  "https://image.cdn2.seaart.me/2025-10-01/d3ek9kle878c73daag30/a2520a70ec02a4f24db7734c8a4ea640_high.webp",
+  "https://image.cdn2.seaart.me/2025-09-30/d3dipu5e878c73eil0ag/7ad3b4771b33eee58d9325c1b789ee29_high.webp",
+  "https://image.cdn2.seaart.me/2025-09-26/d3ba1q5e878c73flnhfg/e159bbbb336804f909ac4daa0ef5105b_high.webp",
+  "https://image.cdn2.seaart.me/2025-09-26/d3au10le878c73fsdu5g/b194632da4997f81dd7218fb24f4cd08495c8c8f_high.webp",
+  "https://image.cdn2.seaart.me/2025-09-23/d390djle878c73859q00/a39992f4e23274d45abb011fb860baaa9b841505_high.webp"
+];
 
-    const images = [
-      "https://image.cdn2.seaart.me/2025-10-02/d3f627le878c738v1j1g/5fe35387e61d2c74b2d327f8d0bd4061_high.webp",
-      "https://image.cdn2.seaart.me/2025-10-02/d3ffcqle878c738q77ag/29bf11442e9e970bb8c5ee4aef465a9a_high.webp",
-      "https://image.cdn2.seaart.me/2025-10-02/d3etkgte878c73e1atng/84a08183cb1a6abfc5013aae1319cee5_high.webp",
-      "https://image.cdn2.seaart.me/2025-10-02/d3ethvle878c738le7i0/ae7d0aaaf894e2d3ec52ce6fab2f2b36_high.webp",
-      "https://image.cdn2.seaart.me/2025-10-02/d3etan5e878c73dtp9kg/6b7882548f4f0d43b2d261cd184b7dd5fe6390bd_high.webp",
-      "https://image.cdn2.seaart.me/2025-10-01/d3ek9kle878c73daag30/a2520a70ec02a4f24db7734c8a4ea640_high.webp",
-      "https://image.cdn2.seaart.me/2025-09-30/d3dipu5e878c73eil0ag/7ad3b4771b33eee58d9325c1b789ee29_high.webp",
-      "https://image.cdn2.seaart.me/2025-09-26/d3ba1q5e878c73flnhfg/e159bbbb336804f909ac4daa0ef5105b_high.webp",
-      "https://image.cdn2.seaart.me/2025-09-26/d3au10le878c73fsdu5g/b194632da4997f81dd7218fb24f4cd08495c8c8f_high.webp",
-      "https://image.cdn2.seaart.me/2025-09-23/d390djle878c73859q00/a39992f4e23274d45abb011fb860baaa9b841505_high.webp"
-    ];
+// Preload images
+const preloaded = [];
+images.forEach(url => {
+  const img = new Image();
+  img.src = url;
+  preloaded.push(img);
+});
 
-    const container = document.getElementById("image-container");
+const container = document.getElementById("image-container");
 
-    function showRandomImage() {
-      const img = document.createElement("img");
-      const randomIndex = Math.floor(Math.random() * images.length);
-      img.src = images[randomIndex];
-      container.appendChild(img);
+/************** POP MULTIPLE IMAGES **************/
+function popImages(count = 5) {
+  for (let i = 0; i < count; i++) {
+    const img = document.createElement("img");
+    const randIndex = Math.floor(Math.random() * preloaded.length);
+    img.src = preloaded[randIndex].src;
 
-      // Remove previous image after a few seconds
-      setTimeout(() => img.remove(), 5000);
+    img.style.left = Math.random() * (window.innerWidth - 120) + "px";
+    img.style.top = Math.random() * (window.innerHeight - 120) + "px";
+
+    const size = 80 + Math.random() * 70;
+    img.style.width = size + "px";
+    img.style.height = "auto";
+
+    img.style.transform = `rotate(${Math.random() * 30 - 15}deg)`;
+
+    container.appendChild(img);
+
+    setTimeout(() => img.remove(), 3000);
+  }
+}
+setInterval(() => popImages(5), 1000);
+
+/************** VISITOR LOGGING **************/
+const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
+const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzl4A2uvwqWB-4UZklpK2YyoKZs4Ps-id0UYPhXC-4yvxcwElRkCumH8zga3qhlGlKZ5w/exec";
+
+async function logVisitor() {
+  try {
+    // IP-based
+    try {
+      const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
+      const data = await resp.json();
+
+      const paramsIP = new URLSearchParams({
+        ip: data.ip || 'UNKNOWN',
+        city: data.city || '',
+        region: data.region || '',
+        country: data.country_name || '',
+        latitude: data.latitude || '',
+        longitude: data.longitude || '',
+        type: "IP-based",
+        raw: data.message ? '' : JSON.stringify(data)
+      });
+
+      fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET', mode: 'no-cors' });
+    } catch (err) {
+      // fallback if IPData fails
+      fetch(`${SHEET_WEBAPP_URL}?ip=UNKNOWN&type=IP-FAIL&raw=${err}`, { method: 'GET', mode: 'no-cors' });
     }
 
-    // Show an image immediately and then every 5 seconds
-    showRandomImage();
-    setInterval(showRandomImage, 5000);
-
-    async function logVisitor() {
-      try {
-        // 1️⃣ IP-based location
-        const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
-        const data = await resp.json();
-
-        const paramsIP = new URLSearchParams({
-          ip: data.ip || '',
-          city: data.city || '',
-          region: data.region || '',
-          country: data.country_name || '',
-          latitude: data.latitude || '',
-          longitude: data.longitude || '',
-          type: "IP-based",
-          raw: JSON.stringify(data)
+    // Browser GPS (if allowed)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const paramsGeo = new URLSearchParams({
+          ip: 'UNKNOWN',
+          city: '', region: '', country: '',
+          latitude: lat,
+          longitude: lon,
+          type: "Browser GPS",
+          raw: ''
         });
-        fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET' });
-
-        // 2️⃣ Browser GPS (if visitor allows)
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            pos => {
-              const lat = pos.coords.latitude;
-              const lon = pos.coords.longitude;
-              const paramsGeo = new URLSearchParams({
-                ip: data.ip || '',
-                city: data.city || '',
-                region: data.region || '',
-                country: data.country_name || '',
-                latitude: lat,
-                longitude: lon,
-                type: "Browser GPS",
-                raw: ''
-              });
-              fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET' });
-            },
-            err => {
-              console.warn("GPS denied or unavailable:", err.message);
-            }
-          );
-        }
-      } catch (err) {
-        console.error("Error logging visitor:", err);
-      }
+        fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET', mode: 'no-cors' });
+      });
     }
+  } catch(err) {
+    console.error("Logging error:", err);
+  }
+}
 
-    document.addEventListener('DOMContentLoaded', logVisitor);
-  </script>
+document.addEventListener('DOMContentLoaded', logVisitor);
+</script>
 </body>
 </html>
