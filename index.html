@@ -28,11 +28,10 @@
           return;
         }
 
-        // Show city/country + latitude/longitude in Google Maps format
-        const latlon = `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`;
+        // Show city/country and coordinates on the page
         document.getElementById("location").innerHTML =
           `<p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>
-           <p>Coordinates: <strong>${latlon}</strong></p>`;
+           <p>Latitude: ${data.latitude || 'N/A'}, Longitude: ${data.longitude || 'N/A'}</p>`;
 
         // Log to Google Sheet
         const params = new URLSearchParams({
