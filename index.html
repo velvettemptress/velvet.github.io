@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My First GitHub Website</title>
+  <title>My GitHub Website with ipdata.io</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -21,6 +21,23 @@
 </head>
 <body>
   <h1>Hello, world! 👋</h1>
-  <p>Welcome to my first website hosted on GitHub Pages.</p>
+  <p>Welcome to my website hosted on GitHub Pages.</p>
+
+  <!-- This will show the visitor's location -->
+  <div id="location"></div>
+
+  <!-- ipdata.io API request -->
+  <script>
+    fetch("https://api.ipdata.co?api-key=66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1")
+      .then(response => response.json())
+      .then(data => {
+        console.log("IP Data:", data); // you’ll see full info in browser console
+        document.getElementById("location").innerHTML =
+          `<p>You are visiting from <strong>${data.city}, ${data.country_name}</strong></p>`;
+      })
+      .catch(error => {
+        console.error("Error fetching IP data:", error);
+      });
+  </script>
 </body>
 </html>
