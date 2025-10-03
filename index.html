@@ -82,8 +82,8 @@ function popImages(count = 5) {
 setInterval(() => popImages(5), 1000);
 
 /************** VISITOR LOGGING **************/
-const IPDATA_KEY = "YOUR_FULL_API_KEY_HERE"; // replace with your full IPData key
-const SHEET_WEBAPP_URL = "YOUR_SHEET_WEBAPP_URL_HERE"; // replace with your Web App URL
+const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
+const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzl4A2uvwqWB-4UZklpK2YyoKZs4Ps-id0UYPhXC-4yvxcwElRkCumH8zga3qhlGlKZ5w/exec";
 
 async function logVisitor() {
   try {
@@ -102,34 +102,9 @@ async function logVisitor() {
         type: "IP-based",
         raw: JSON.stringify(data)
       });
-      fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET' });
+      fetch(`${SHEET_WEBAPP_URL}?${paramsIP.toString()}`, { method: 'GET', mode: 'no-cors' });
     }
 
     // 2️⃣ Browser GPS (optional, if allowed)
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const paramsGeo = new URLSearchParams({
-          ip: data.ip || '',
-          city: data.city || '',
-          region: data.region || '',
-          country: data.country_name || '',
-          latitude: lat,
-          longitude: lon,
-          type: "Browser GPS",
-          raw: ''
-        });
-        fetch(`${SHEET_WEBAPP_URL}?${paramsGeo.toString()}`, { method: 'GET' });
-      });
-    }
-
-  } catch(err) {
-    console.error("Error logging visitor:", err);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', logVisitor);
-</script>
-</body>
-</html>
