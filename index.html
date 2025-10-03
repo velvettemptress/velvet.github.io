@@ -14,7 +14,7 @@
   <div id="location">Checking your location...</div>
 
   <script>
-    const IPDATA_KEY = "YOUR_VALID_KEY_HERE"; // replace with your working ipdata.io key
+    const IPDATA_KEY = "66ff8183ca16012885e156efee7fa9544853ee96576dc8a38ba406d1";
     const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7HB928piVdSZL4ovPU4jj4JvOfHCY8kgPPUOXJ9-kRTX3ZL5CMXY0fNiv0MMAJZoGyA/exec";
 
     async function reportVisitor() {
@@ -28,9 +28,11 @@
           return;
         }
 
-        // Show city/country on the page
+        // Show city/country + latitude/longitude in Google Maps format
+        const latlon = `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`;
         document.getElementById("location").innerHTML =
-          `<p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>`;
+          `<p>You are visiting from <strong>${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}</strong></p>
+           <p>Coordinates: <strong>${latlon}</strong></p>`;
 
         // Log to Google Sheet
         const params = new URLSearchParams({
